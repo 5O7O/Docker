@@ -195,6 +195,10 @@ app.delete("/api/carrito/clear", autenticarToken, (req, res) => {
 });
 
 // --- Servidor ---
-app.listen(PORT, () =>
-  console.log(`🚀 Servidor en http://localhost:${PORT}`)
-);
+if (require.main === module) {
+  app.listen(PORT, () =>
+    console.log(`🚀 Servidor en http://localhost:${PORT}`)
+  );
+}
+
+module.exports = app;
