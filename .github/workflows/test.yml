@@ -2,9 +2,9 @@ name: pruebas en Docker
 
 on:
   push:
-    branches: [ "main" ]
+    branches: ["main"]
   pull_request:
-    branches: [ "main" ]
+    branches: ["main"]
 
 jobs:
   test:
@@ -78,12 +78,31 @@ jobs:
         id: docker-summary
         run: |
           echo "## 🐳 Docker Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- Repository: ${{ secrets.Docker_Username }}/miapp" >> $GITHUB_STEP_SUMMARY
-          echo "- Tags: ${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Size: $(docker images ${{ secrets.Docker_Username }}/miapp --format "{{.Size}}" | head -1)" >> $GITHUB_STEP_SUMMARY
-          echo "- Build Status: ✅ Success" >> $GITHUB_STEP_SUMMARY
-          echo "- Platform: $(uname -m)" >> $GITHUB_STEP_SUMMARY
-          echo "- Pushed to: Docker Hub" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📦 Imagen Construida" >> $GITHUB_STEP_SUMMARY
+          echo "- **Repository:** ${{ secrets.Docker_Username }}/miapp" >> $GITHUB_STEP_SUMMARY
+          echo "- **Tags:** ${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Size:** $(docker images ${{ secrets.Docker_Username }}/miapp --format "{{.Size}}" | head -1)" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 🔧 Detalles de Build" >> $GITHUB_STEP_SUMMARY
+          echo "- **Build Status:** ✅ Success" >> $GITHUB_STEP_SUMMARY
+          echo "- **Platform:** $(uname -m)" >> $GITHUB_STEP_SUMMARY
+          echo "- **Pushed to:** Docker Hub" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Tags Disponibles" >> $GITHUB_STEP_SUMMARY
+          IFS=',' read -ra TAGS <<< "${{ steps.meta.outputs.tags }}"
+          for tag in "${TAGS[@]}"; do
+            echo "- $tag" >> $GITHUB_STEP_SUMMARY
+          done
+
+      - name: Upload Docker Build Info
+        uses: actions/upload-artifact@v4
+        with:
+          name: docker-build-info
+          path: |
+            Dockerfile
+            .dockerignore
+          retention-days: 30
 
   summary:
     runs-on: ubuntu-latest
@@ -92,9 +111,14 @@ jobs:
       - name: Generate Final Summary
         run: |
           echo "# 📊 Workflow Execution Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
           echo "## ✅ Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "- Tests ejecutados y resultados subidos" >> $GITHUB_STEP_SUMMARY
+          echo "- Tests executed successfully" >> $GITHUB_STEP_SUMMARY
+          echo "- Results uploaded as artifact" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
           echo "## 🐳 Docker Build" >> $GITHUB_STEP_SUMMARY
-          echo "- Imagen construida y publicada en Docker Hub" >> $GITHUB_STEP_SUMMARY
+          echo "- Image built and pushed to Docker Hub" >> $GITHUB_STEP_SUMMARY
+          echo "- Tags: ${{ needs.docker.outputs.docker-summary }}" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📅 Execution Time" >> $GITHUB_STEP_SUMMARY
-          echo "- Workflow completado en: $(date -u)" >> $GITHUB_STEP_SUMMARY
+          echo "- Workflow completed at: $(date -u)" >> $GITHUB_STEP_SUMMARY
