@@ -1,4 +1,4 @@
-name: pruebas en Docker
+name: Pruebas y Docker CI/CD
 
 on:
   push:
@@ -10,20 +10,25 @@ jobs:
   test:
     runs-on: ubuntu-latest
     steps:
+      # Checkout del repo
       - name: Checkout repositorio
         uses: actions/checkout@v4
 
+      # Configurar Node.js
       - name: Configurar Node.js
         uses: actions/setup-node@v4
         with:
           node-version: '18'
 
+      # Instalar dependencias
       - name: Instalar dependencias
         run: npm install
 
+      # Ejecutar pruebas con reporte JUnit
       - name: Ejecutar pruebas con reporte
         run: npm test -- --reporter=junit --outputFile=test-results.xml
 
+      # Subir resultados de prueba
       - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
@@ -32,6 +37,7 @@ jobs:
           path: test-results.xml
           retention-days: 30
 
+      # Publicar Test Results en Summary
       - name: Publish Test Results
         uses: dorny/test-reporter@v1
         if: always()
@@ -40,13 +46,11 @@ jobs:
           path: test-results.xml
           reporter: jest-junit
 
-      # -----------------------------
-      # 📈 Cobertura de Pruebas (Métricas)
-      # -----------------------------
+      # 📈 Cobertura de pruebas
       - name: Ejecutar métricas de cobertura
         run: npm run coverage
 
-      - name: Upload coverage report
+      - name: Subir reporte de cobertura
         uses: actions/upload-artifact@v4
         with:
           name: coverage-report
@@ -54,11 +58,13 @@ jobs:
           retention-days: 30
 
       - name: Mostrar % cobertura en summary
-        run: |
-          COVERAGE=$(npx coverage-percentage ./coverage/lcov.info total lines)
-          echo "## 📈 Coverage Report" >> $GITHUB_STEP_SUMMARY
-          echo "- Cobertura total de líneas: **$COVERAGE%**" >> $GITHUB_STEP_SUMMARY
-          echo "- Reporte HTML disponible en artifacts (coverage-report)" >> $GITHUB_STEP_SUMMARY
+        uses: irongut/CodeCoverageSummary@v1.3.0
+        with:
+          filename: coverage/lcov.info
+          badge: true
+          format: markdown
+          output: both
+          thresholds: '60 80'
 
   docker:
     runs-on: ubuntu-latest
@@ -69,12 +75,14 @@ jobs:
       - name: Checkout repositorio
         uses: actions/checkout@v4
 
+      # Login Docker Hub
       - name: Login en Docker Hub
         uses: docker/login-action@v3
         with:
           username: ${{ secrets.Docker_Username }}
           password: ${{ secrets.Docker_Password }}
 
+      # Extraer metadatos de Docker
       - name: Extraer metadatos de Docker
         id: meta
         uses: docker/metadata-action@v5
@@ -85,6 +93,7 @@ jobs:
             type=sha,prefix={{branch}}-
             type=raw,value=latest,enable={{is_default_branch}}
 
+      # Construir y subir imagen
       - name: Construir y subir imagen a Docker Hub
         id: build-push
         uses: docker/build-push-action@v5
@@ -94,27 +103,23 @@ jobs:
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
 
+      # Generar resumen Docker
       - name: Generate Docker Summary
         id: docker-summary
         run: |
           echo "## 🐳 Docker Build Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📦 Imagen Construida" >> $GITHUB_STEP_SUMMARY
-          echo "- **Repository:** ${{ secrets.Docker_Username }}/miapp" >> $GITHUB_STEP_SUMMARY
-          echo "- **Tags:** ${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Size:** $(docker images ${{ secrets.Docker_Username }}/miapp --format "{{.Size}}" | head -1)" >> $GITHUB_STEP_SUMMARY
+          echo "- Repository: ${{ secrets.Docker_Username }}/miapp" >> $GITHUB_STEP_SUMMARY
+          echo "- Tags: ${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Size: $(docker images ${{ secrets.Docker_Username }}/miapp --format "{{.Size}}" | head -1)" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 🔧 Detalles de Build" >> $GITHUB_STEP_SUMMARY
-          echo "- **Build Status:** ✅ Success" >> $GITHUB_STEP_SUMMARY
-          echo "- **Platform:** $(uname -m)" >> $GITHUB_STEP_SUMMARY
-          echo "- **Pushed to:** Docker Hub" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📋 Tags Disponibles" >> $GITHUB_STEP_SUMMARY
-          IFS=',' read -ra TAGS <<< "${{ steps.meta.outputs.tags }}"
-          for tag in "${TAGS[@]}"; do
-            echo "- \`$tag\`" >> $GITHUB_STEP_SUMMARY
-          done
+          echo "- Build Status: ✅ Success" >> $GITHUB_STEP_SUMMARY
+          echo "- Platform: $(uname -m)" >> $GITHUB_STEP_SUMMARY
+          echo "- Pushed to Docker Hub" >> $GITHUB_STEP_SUMMARY
 
+      # Subir info Docker como artifact
       - name: Upload Docker Build Info
         uses: actions/upload-artifact@v4
         with:
