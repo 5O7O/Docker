@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Carrito</title>
+  <link rel="stylesheet" href="style2.css">
+</head>
+<body>
+  <h1 style="text-align:center;">Catálogo de Productos</h1>
+  <div id="productos" class="productos"></div>
+
+  <!-- Carrito flotante -->
+  <div id="carrito" class="carrito-flotante">
+    <h3>🛒 Carrito</h3>
+    <ul id="listaCarrito"></ul>
+    <p id="total">Total: $0</p>
+    <button id="finalizar">Finalizar Compra</button>
+    <button id="vaciar">Vaciar Carrito</button>
+    <button id="logout">Cerrar sesión</button>
+  </div>
+
+  <script>
+  let carrito = [];
+  let total = 0;
+
+  const token = localStorage.getItem("token");
+  if (!token) {
+    alert("Debes iniciar sesión");
+    window.location.href = "/index.html";
+  }
+
+  // --- Cargar productos y carrito ---
+  async function cargarProductos() {
+    try {
+      const res = await fetch("/api/products", {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+
+      if (!res.ok) {
+        alert("No autorizado. Inicia sesión de nuevo.");
+        localStorage.removeItem("token");
+        window.location.href = "/index.html";
+        return;
+      }
+
+      const productos = await res.json();
+      mostrarProductos(productos);
+      await cargarCarrito(); // cargar el carrito del servidor
+    } catch (err) {
+      console.error(err);
+      alert("Error al cargar productos");
+    }
+  }
+
+  function mostrarProductos(productos) {
+    const cont = document.getElementById("productos");
+    cont.innerHTML = "";
+
+    productos.forEach(p => {
+      const card = document.createElement("div");
+      card.className = "card";
+      card.innerHTML = `
+        <img src="${p.image}" width="150">
+        <h4>${p.name}</h4>
+        <p>$${p.price}</p>
+      `;
+      const btn = document.createElement("button");
+      btn.textContent = "Agregar";
+      btn.addEventListener("click", () => agregarCarrito(p.id, p.name, p.price, p.image));
+      card.appendChild(btn);
+      cont.appendChild(card);
+    });
+  }
+
+  // --- Cargar carrito desde backend ---
+  async function cargarCarrito() {
+    try {
+      const res = await fetch("/api/carrito", {
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        carrito = await res.json();
+        actualizarCarrito();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // --- Agregar producto al carrito ---
+  async function agregarCarrito(id, name, price, image) {
+    try {
+      const res = await fetch("/api/carrito/add", {
+        method: "POST",
+        headers: { 
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ id, name, price, image, cantidad: 1 })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        carrito = data.carrito;
+        actualizarCarrito();
+      } else {
+        const error = await res.json();
+        alert("Error: " + (error.message || "No se pudo agregar"));
+      }
+    } catch (err) {
+      console.error(err);
+      alert("Error al agregar producto");
+    }
+  }
+
+  // --- Actualizar cantidad ---
+  async function cambiarCantidad(id, nuevaCantidad) {
+    try {
+      const res = await fetch(`/api/carrito/update/${id}`, {
+        method: "PUT",
+        headers: { 
+          "Authorization": `Bearer ${token}`,
+          "Content-Type": "application/json"
+        },
+        body: JSON.stringify({ cantidad: nuevaCantidad })
+      });
+      if (res.ok) {
+        const data = await res.json();
+        carrito = data.carrito;
+        actualizarCarrito();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // --- Eliminar producto ---
+  async function eliminarDelCarrito(id) {
+    try {
+      const res = await fetch(`/api/carrito/remove/${id}`, {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        const data = await res.json();
+        carrito = data.carrito;
+        actualizarCarrito();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // --- Vaciar carrito ---
+  async function vaciarCarrito() {
+    try {
+      const res = await fetch("/api/carrito/clear", {
+        method: "DELETE",
+        headers: { "Authorization": `Bearer ${token}` }
+      });
+      if (res.ok) {
+        carrito = [];
+        actualizarCarrito();
+      }
+    } catch (err) {
+      console.error(err);
+    }
+  }
+
+  // --- Actualizar la vista ---
+  function actualizarCarrito() {
+    const lista = document.getElementById("listaCarrito");
+    lista.innerHTML = "";
+    total = 0;
+
+    carrito.forEach(item => {
+      total += item.price * item.cantidad;
+
+      const li = document.createElement("li");
+      li.className = "carrito-item";
+      li.innerHTML = `
+        <img src="${item.image}" class="carrito-img">
+        <div class="carrito-info">
+          <div class="carrito-header">
+            <strong>${item.name}</strong>
+            <button class="btn-eliminar">x</button>
+          </div>
+          <p class="carrito-precio">
+            $${item.price.toFixed(2)} × ${item.cantidad} = 
+            <strong>$${(item.price * item.cantidad).toFixed(2)}</strong>
+          </p>
+          <div class="carrito-controles">
+            <button class="btn-menos">−</button>
+            <span>${item.cantidad}</span>
+            <button class="btn-mas">+</button>
+          </div>
+        </div>
+      `;
+
+      // Eventos para eliminar y cambiar cantidad
+      li.querySelector(".btn-eliminar").addEventListener("click", () => eliminarDelCarrito(item.id));
+      li.querySelector(".btn-menos").addEventListener("click", () => cambiarCantidad(item.id, item.cantidad - 1));
+      li.querySelector(".btn-mas").addEventListener("click", () => cambiarCantidad(item.id, item.cantidad + 1));
+
+      lista.appendChild(li);
+    });
+
+    document.getElementById("total").textContent = `Total: $${total.toFixed(2)}`;
+  }
+
+  // --- Botones globales ---
+  document.getElementById("finalizar").addEventListener("click", () => {
+    if (carrito.length === 0) {
+      alert("Tu carrito está vacío.");
+      return;
+    }
+    alert("✅ Compra finalizada. Total: $" + total.toFixed(2));
+    vaciarCarrito();
+  });
+
+  document.getElementById("vaciar").addEventListener("click", () => {
+    vaciarCarrito();
+  });
+
+  document.getElementById("logout").addEventListener("click", () => {
+    localStorage.removeItem("token");
+    window.location.href = "/index.html";
+  });
+
+  // --- Cargar productos al iniciar ---
+  cargarProductos();
+  </script>
+</body>
+</html>

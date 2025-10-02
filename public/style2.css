@@ -1,0 +1,221 @@
+body {
+  font-family: Arial, sans-serif;
+  background: #f3f3f3;
+  margin: 0;
+  padding: 0;
+}
+
+h1 {
+  margin-top: 20px;
+  color: #310162;
+}
+
+.productos {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  justify-content: center;
+  padding: 20px;
+}
+
+.card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 15px;
+  width: 200px;
+  text-align: center;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+  transition: transform 0.2s ease;
+}
+
+.card:hover {
+  transform: translateY(-5px);
+}
+
+.card button {
+  background: linear-gradient(to right, #310162, #7700ff);
+  border: none;
+  color: #fff;
+  padding: 8px 12px;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.card button:hover {
+  background: linear-gradient(to right, #220043, #5800bc);
+}
+
+/* Carrito flotante */
+.carrito-flotante {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  width: fit-content;
+  background: #fff;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0px 8px 20px rgba(0,0,0,0.2);
+}
+
+.carrito-flotante h3 {
+  text-align: center;
+  color: #310162;
+}
+
+#listaCarrito {
+  list-style: none;
+  padding: 0;
+  max-height: 200px;
+  overflow-y: auto;
+  margin-bottom: 10px;
+}
+
+#total {
+  font-weight: bold;
+  text-align: center;
+  margin: 10px 0;
+  color: #310162;
+}
+
+#finalizar {
+  display: block;
+  width: 100%;
+  background: linear-gradient(to right, #310162, #7700ff);
+  border: none;
+  color: #fff;
+  padding: 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+
+#finalizar:hover {
+  background: linear-gradient(to right, #220043, #5800bc);
+}
+
+#logout {
+  display: block;
+  width: 100%;
+  background: linear-gradient(to right, #310162, #7700ff);
+  border: none;
+  color: #fff;
+  padding: 8px;
+  border-radius: 10px;
+  cursor: pointer;
+}
+
+#logout:hover {
+  background: linear-gradient(to right, #220043, #5800bc);
+}
+
+#vaciar{
+  display: block;
+  width: 100%;
+  background: linear-gradient(to right, #310162, #7700ff);
+  border: none;
+  color: #fff;
+  padding: 8px;
+  border-radius: 10px;
+  cursor: pointer;
+  margin-bottom: 10px;
+}
+#vaciar:hover {
+  background: linear-gradient(to right, #220043, #5800bc);
+}
+
+/* 🔹 Botones del carrito (➖, ➕, ❌) */
+#listaCarrito button {
+  background: transparent;
+  border: none;
+  color: #310162;
+  font-size: 14px;
+  margin: 0 3px;
+  cursor: pointer;
+  transition: transform 0.1s ease;
+}
+
+#listaCarrito button:hover {
+  transform: scale(1.2);
+  color: #7700ff;
+}
+/* Items del carrito */
+.carrito-item {
+  display: flex;
+  align-items: flex-start;
+  background: #f8f8f8;
+  border-radius: 10px;
+  padding: 10px;
+  margin-bottom: 10px;
+  box-shadow: 0 2px 6px rgba(0,0,0,0.1);
+}
+
+.carrito-img {
+  width: 50px;
+  height: 50px;
+  object-fit: cover;
+  border-radius: 8px;
+  margin-right: 10px;
+}
+
+.carrito-info {
+  flex: 1;
+}
+
+.carrito-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.carrito-header strong {
+  font-size: 14px;
+  color: #310162;
+}
+
+.btn-eliminar {
+  background: transparent;
+  border: none;
+  color: #d9534f;
+  font-size: 12px;
+  cursor: pointer;
+}
+
+.btn-eliminar:hover {
+  text-decoration: underline;
+}
+
+.carrito-precio {
+  font-size: 13px;
+  margin: 5px 0;
+  color: #444;
+}
+
+.carrito-precio strong {
+  color: #000;
+}
+
+.carrito-controles {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.carrito-controles button {
+  background: transparent;
+  border: 1px solid #310162;
+  border-radius: 5px;
+  padding: 2px 8px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #310162;
+}
+
+.carrito-controles button:hover {
+  background: #310162;
+  color: white;
+}
+
+.carrito-controles span {
+  font-weight: bold;
+  font-size: 14px;
+}

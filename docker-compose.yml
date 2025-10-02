@@ -1,0 +1,12 @@
+
+services:
+  app:
+    build: .
+    container_name: rau3_app
+    ports:
+      - "5000:5000"
+    env_file:
+      - .env
+    volumes:
+      - .:/app
+    restart: unless-stopped
