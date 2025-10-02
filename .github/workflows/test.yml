@@ -40,6 +40,26 @@ jobs:
           path: test-results.xml
           reporter: jest-junit
 
+      # -----------------------------
+      # 📈 Cobertura de Pruebas (Métricas)
+      # -----------------------------
+      - name: Ejecutar métricas de cobertura
+        run: npm run coverage
+
+      - name: Upload coverage report
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-report
+          path: coverage
+          retention-days: 30
+
+      - name: Mostrar % cobertura en summary
+        run: |
+          COVERAGE=$(npx coverage-percentage ./coverage/lcov.info total lines)
+          echo "## 📈 Coverage Report" >> $GITHUB_STEP_SUMMARY
+          echo "- Cobertura total de líneas: **$COVERAGE%**" >> $GITHUB_STEP_SUMMARY
+          echo "- Reporte HTML disponible en artifacts (coverage-report)" >> $GITHUB_STEP_SUMMARY
+
   docker:
     runs-on: ubuntu-latest
     needs: test
@@ -113,12 +133,13 @@ jobs:
           echo "# 📊 Workflow Execution Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## ✅ Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "- Tests executed successfully" >> $GITHUB_STEP_SUMMARY
-          echo "- Results uploaded as artifact" >> $GITHUB_STEP_SUMMARY
+          echo "- Tests ejecutados y resultados subidos" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📈 Coverage" >> $GITHUB_STEP_SUMMARY
+          echo "- Revisar coverage-report en artifacts" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## 🐳 Docker Build" >> $GITHUB_STEP_SUMMARY
-          echo "- Image built and pushed to Docker Hub" >> $GITHUB_STEP_SUMMARY
-          echo "- Tags: ${{ needs.docker.outputs.docker-summary }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Imagen construida y publicada en Docker Hub" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📅 Execution Time" >> $GITHUB_STEP_SUMMARY
-          echo "- Workflow completed at: $(date -u)" >> $GITHUB_STEP_SUMMARY
+          echo "- Workflow completado en: $(date -u)" >> $GITHUB_STEP_SUMMARY
