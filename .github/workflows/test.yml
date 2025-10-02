@@ -11,10 +11,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repositorio
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Configurar Node.js
-        uses: actions/setup-node@v3
+        uses: actions/setup-node@v4
         with:
           node-version: '18'
 
@@ -23,11 +23,11 @@ jobs:
 
       - name: Ejecutar pruebas con reporte
         run: npm test -- --reporter=junit --outputFile=test-results.xml
-        # Ajusta según tu runner de pruebas (Jest, Mocha, etc.)
+        # Ajusta según tu runner de pruebas
 
       - name: Upload test results
-        uses: actions/upload-artifact@v3
-        if: always()  # Sube resultados aunque falle
+        uses: actions/upload-artifact@v4
+        if: always()
         with:
           name: test-results
           path: test-results.xml
@@ -46,16 +46,16 @@ jobs:
     needs: test
     steps:
       - name: Checkout repositorio
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4
 
       - name: Login en Docker Hub
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           username: ${{ secrets.Docker_Username }}
           password: ${{ secrets.Docker_Password }}
 
       - name: Construir y subir imagen a Docker Hub
-        uses: docker/build-push-action@v4
+        uses: docker/build-push-action@v5
         with:
           context: .
           push: true
