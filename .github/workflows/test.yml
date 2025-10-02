@@ -1,4 +1,4 @@
-name: CI/CD Docker + Tests + Coverage
+name: pruebas en Docker
 
 on:
   push:
@@ -21,10 +21,10 @@ jobs:
       - name: Instalar dependencias
         run: npm install
 
-      - name: Ejecutar pruebas con reporte JUnit
-        run: npm test -- --reporters=default --reporters=jest-junit
+      - name: Ejecutar pruebas con reporte
+        run: npm test -- --reporter=junit --outputFile=test-results.xml
 
-      - name: Subir resultados de pruebas
+      - name: Upload test results
         uses: actions/upload-artifact@v4
         if: always()
         with:
@@ -32,14 +32,19 @@ jobs:
           path: test-results.xml
           retention-days: 30
 
+      - name: Publish Test Results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Test Results
+          path: test-results.xml
+          reporter: jest-junit
+
       # -----------------------------
       # 📈 Cobertura de Pruebas (Métricas)
       # -----------------------------
-      - name: Ejecutar métricas de cobertura
+      - name: Ejecutar cobertura
         run: npm run coverage
-
-      - name: Verificar archivo LCOV
-        run: ls -l coverage/lcov.info
 
       - name: Subir reporte de cobertura
         uses: actions/upload-artifact@v4
@@ -48,7 +53,7 @@ jobs:
           path: coverage
           retention-days: 30
 
-      - name: Mostrar % cobertura en summary
+      - name: Generar resumen de cobertura en summary
         uses: irongut/CodeCoverageSummary@v1.3.0
         with:
           filename: coverage/lcov.info
@@ -133,7 +138,7 @@ jobs:
           echo "- Tests ejecutados y resultados subidos" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## 📈 Coverage" >> $GITHUB_STEP_SUMMARY
-          echo "- Revisar coverage-report en artifacts y badge de cobertura" >> $GITHUB_STEP_SUMMARY
+          echo "- Revisa el badge y tabla de cobertura generados en el paso 'Generar resumen de cobertura en summary'" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## 🐳 Docker Build" >> $GITHUB_STEP_SUMMARY
           echo "- Imagen construida y publicada en Docker Hub" >> $GITHUB_STEP_SUMMARY
