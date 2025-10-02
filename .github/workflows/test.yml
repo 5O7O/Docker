@@ -54,13 +54,16 @@ jobs:
           retention-days: 30
 
       - name: Generar resumen de cobertura en summary
-        uses: irongut/CodeCoverageSummary@v1.3.0
-        with:
-          filename: coverage/lcov.info
-          badge: true
-          format: markdown
-          output: both
-          thresholds: '60 80'
+        run: |
+          echo "## 📈 Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          LINES=$(jq '.total.lines.pct' coverage/coverage-summary.json)
+          FUNCTIONS=$(jq '.total.functions.pct' coverage/coverage-summary.json)
+          STATEMENTS=$(jq '.total.statements.pct' coverage/coverage-summary.json)
+          BRANCHES=$(jq '.total.branches.pct' coverage/coverage-summary.json)
+          echo "- Lines: $LINES%" >> $GITHUB_STEP_SUMMARY
+          echo "- Functions: $FUNCTIONS%" >> $GITHUB_STEP_SUMMARY
+          echo "- Statements: $STATEMENTS%" >> $GITHUB_STEP_SUMMARY
+          echo "- Branches: $BRANCHES%" >> $GITHUB_STEP_SUMMARY
 
   docker:
     runs-on: ubuntu-latest
@@ -100,31 +103,12 @@ jobs:
         id: docker-summary
         run: |
           echo "## 🐳 Docker Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📦 Imagen Construida" >> $GITHUB_STEP_SUMMARY
-          echo "- **Repository:** ${{ secrets.Docker_Username }}/miapp" >> $GITHUB_STEP_SUMMARY
-          echo "- **Tags:** ${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Size:** $(docker images ${{ secrets.Docker_Username }}/miapp --format "{{.Size}}" | head -1)" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 🔧 Detalles de Build" >> $GITHUB_STEP_SUMMARY
-          echo "- **Build Status:** ✅ Success" >> $GITHUB_STEP_SUMMARY
-          echo "- **Platform:** $(uname -m)" >> $GITHUB_STEP_SUMMARY
-          echo "- **Pushed to:** Docker Hub" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### 📋 Tags Disponibles" >> $GITHUB_STEP_SUMMARY
-          IFS=',' read -ra TAGS <<< "${{ steps.meta.outputs.tags }}"
-          for tag in "${TAGS[@]}"; do
-            echo "- \`$tag\`" >> $GITHUB_STEP_SUMMARY
-          done
-
-      - name: Upload Docker Build Info
-        uses: actions/upload-artifact@v4
-        with:
-          name: docker-build-info
-          path: |
-            Dockerfile
-            .dockerignore
-          retention-days: 30
+          echo "- Repository: ${{ secrets.Docker_Username }}/miapp" >> $GITHUB_STEP_SUMMARY
+          echo "- Tags: ${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Size: $(docker images ${{ secrets.Docker_Username }}/miapp --format "{{.Size}}" | head -1)" >> $GITHUB_STEP_SUMMARY
+          echo "- Build Status: ✅ Success" >> $GITHUB_STEP_SUMMARY
+          echo "- Platform: $(uname -m)" >> $GITHUB_STEP_SUMMARY
+          echo "- Pushed to: Docker Hub" >> $GITHUB_STEP_SUMMARY
 
   summary:
     runs-on: ubuntu-latest
@@ -133,15 +117,11 @@ jobs:
       - name: Generate Final Summary
         run: |
           echo "# 📊 Workflow Execution Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
           echo "## ✅ Test Results" >> $GITHUB_STEP_SUMMARY
           echo "- Tests ejecutados y resultados subidos" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## 📈 Coverage" >> $GITHUB_STEP_SUMMARY
-          echo "- Revisa el badge y tabla de cobertura generados en el paso 'Generar resumen de cobertura en summary'" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📈 Coverage Summary" >> $GITHUB_STEP_SUMMARY
+          # Se añade automáticamente desde el job test
           echo "## 🐳 Docker Build" >> $GITHUB_STEP_SUMMARY
           echo "- Imagen construida y publicada en Docker Hub" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📅 Execution Time" >> $GITHUB_STEP_SUMMARY
           echo "- Workflow completado en: $(date -u)" >> $GITHUB_STEP_SUMMARY
