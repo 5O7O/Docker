@@ -2,12 +2,11 @@ name: pruebas en Docker
 
 on:
   push:
-    branches: [ "main" ]   # Se ejecuta solo cuando haces push en main
+    branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
 
 jobs:
-  # 1️⃣ Job de pruebas en Node.js
   test:
     runs-on: ubuntu-latest
     steps:
@@ -17,18 +16,34 @@ jobs:
       - name: Configurar Node.js
         uses: actions/setup-node@v3
         with:
-          node-version: '18'   # Ajusta a la versión de Node que uses
+          node-version: '18'
 
       - name: Instalar dependencias
         run: npm install
 
-      - name: Ejecutar pruebas
-        run: npm test
+      - name: Ejecutar pruebas con reporte
+        run: npm test -- --reporter=junit --outputFile=test-results.xml
+        # Ajusta según tu runner de pruebas (Jest, Mocha, etc.)
 
-  # 2️⃣ Job de Docker (solo si pasan las pruebas)
+      - name: Upload test results
+        uses: actions/upload-artifact@v3
+        if: always()  # Sube resultados aunque falle
+        with:
+          name: test-results
+          path: test-results.xml
+          retention-days: 30
+
+      - name: Publish Test Results
+        uses: dorny/test-reporter@v1
+        if: always()
+        with:
+          name: Test Results
+          path: test-results.xml
+          reporter: jest-junit  # Cambia según tu runner
+
   docker:
     runs-on: ubuntu-latest
-    needs: test   # 👈 Esto asegura que solo corra si el job test pasó
+    needs: test
     steps:
       - name: Checkout repositorio
         uses: actions/checkout@v3
