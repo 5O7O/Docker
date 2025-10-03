@@ -1,4 +1,4 @@
-name: pruebas en Docker
+name: CI Workflow con Docker y Métricas
 
 on:
   push:
@@ -7,6 +7,9 @@ on:
     branches: ["main"]
 
 jobs:
+  # =============================
+  #  JOB 1: PRUEBAS UNITARIAS
+  # =============================
   test:
     runs-on: ubuntu-latest
     steps:
@@ -40,6 +43,9 @@ jobs:
           path: test-results.xml
           reporter: jest-junit
 
+  # =============================
+  #  JOB 2: DOCKER BUILD
+  # =============================
   docker:
     runs-on: ubuntu-latest
     needs: test
@@ -104,21 +110,59 @@ jobs:
             .dockerignore
           retention-days: 30
 
+  # =============================
+  #  JOB 3: GENERAR MÉTRICAS
+  # =============================
+  metrics:
+    runs-on: ubuntu-latest
+    needs: test
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install dependencies
+        run: npm install
+
+      - name: Generate metrics
+        run: |
+          mkdir -p metrics
+          echo "📊 Métricas del proyecto" > metrics/metrics.txt
+          echo "Fecha: $(date)" >> metrics/metrics.txt
+          echo "Número de dependencias: $(jq '.dependencies | length' package.json)" >> metrics/metrics.txt
+          echo "Número de devDependencies: $(jq '.devDependencies | length' package.json)" >> metrics/metrics.txt
+          echo "Total de archivos JS/TS: $(find . -name '*.js' -o -name '*.ts' | wc -l)" >> metrics/metrics.txt
+
+      - name: Upload metrics artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: project-metrics
+          path: metrics/
+
+  # =============================
+  #  JOB 4: RESUMEN FINAL
+  # =============================
   summary:
     runs-on: ubuntu-latest
-    needs: [test, docker]
+    needs: [test, docker, metrics]
     steps:
       - name: Generate Final Summary
         run: |
           echo "# 📊 Workflow Execution Summary" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## ✅ Test Results" >> $GITHUB_STEP_SUMMARY
-          echo "- Tests executed successfully" >> $GITHUB_STEP_SUMMARY
-          echo "- Results uploaded as artifact" >> $GITHUB_STEP_SUMMARY
+          echo "- Tests ejecutados y validados" >> $GITHUB_STEP_SUMMARY
+          echo "- Resultados disponibles como artefacto" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "## 🐳 Docker Build" >> $GITHUB_STEP_SUMMARY
-          echo "- Image built and pushed to Docker Hub" >> $GITHUB_STEP_SUMMARY
-          echo "- Tags: ${{ needs.docker.outputs.docker-summary }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Imagen construida y publicada en Docker Hub" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## 📈 Métricas del Proyecto" >> $GITHUB_STEP_SUMMARY
+          echo "- Artefacto generado con estadísticas del proyecto" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "### 📅 Execution Time" >> $GITHUB_STEP_SUMMARY
-          echo "- Workflow completed at: $(date -u)" >> $GITHUB_STEP_SUMMARY
+          echo "- Workflow completado en: $(date -u)" >> $GITHUB_STEP_SUMMARY
