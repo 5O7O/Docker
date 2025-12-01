@@ -4,40 +4,42 @@ trigger:
 pool:
   vmImage: 'ubuntu-latest'
 
-variables:
-  azureSubscription: 'dd84aaae-d79f-4df5-b6d2-2b7120556d25'
-  webAppName: 'PracticaPipeline'  # SI ESTE ES EL NOMBRE REAL DE TU WEB APP
-
 steps:
-# 1. Instalar Node.js
+# 1. Checkout explícito (evita templates)
+- checkout: self
+  displayName: 'Checkout code'
+
+# 2. Instalar Node.js 20.x
 - task: NodeTool@0
   inputs:
-    versionSpec: '18.x'  # Cambiado de 20.x a 18.x
-  displayName: 'Install Node.js'
+    versionSpec: '20.x'
+  displayName: 'Install Node.js 20.x'
 
-# 2. Instalar dependencias
+# 3. Instalar dependencias (solo si hay package.json)
 - script: |
-    npm install
-    npm run build --if-present
-  displayName: 'npm install and build'
+    if [ -f "package.json" ]; then
+      npm install
+      npm run build --if-present
+    fi
+  displayName: 'Install dependencies and build'
 
-# 3. Crear archivo ZIP
+# 4. Crear paquete de despliegue
 - task: ArchiveFiles@2
-  displayName: 'Create ZIP package'
+  displayName: 'Create deployment ZIP'
   inputs:
     rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
     includeRootFolder: false
     archiveType: zip
-    archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
+    archiveFile: '$(Build.ArtifactStagingDirectory)/deploy.zip'
     replaceExistingArchive: true
 
-# 4. Desplegar en Azure
+# 5. Desplegar en Azure Web App
 - task: AzureWebApp@1
-  displayName: 'Deploy to Azure Web App'
+  displayName: 'Deploy to Azure'
   inputs:
-    azureSubscription: '$(azureSubscription)'
+    azureSubscription: 'dd84aaae-d79f-4df5-b6d2-2b7120556d25'
     appType: 'webAppLinux'
-    appName: '$(webAppName)'
-    package: '$(Build.ArtifactStagingDirectory)/app.zip'
-    # Si necesitas este parámetro, descomenta:
+    appName: 'PracticaPipeline'  # ⚠️ VERIFICA: ¿Este es el nombre REAL?
+    package: '$(Build.ArtifactStagingDirectory)/deploy.zip'
+    # Si tu app necesita un comando de inicio:
     # startUpCommand: 'npm start'
