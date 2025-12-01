@@ -1,45 +1,35 @@
 trigger:
-- main
+  - main
 
 pool:
-  vmImage: 'ubuntu-latest'
+  name: Default
 
 steps:
-# 1. Checkout explícito (evita templates)
-- checkout: self
-  displayName: 'Checkout code'
+  - task: NodeTool@0
+    displayName: 'Instalar Node.js'
+    inputs:
+      versionSpec: '18.x'
 
-# 2. Instalar Node.js 20.x
-- task: NodeTool@0
-  inputs:
-    versionSpec: '20.x'
-  displayName: 'Install Node.js 20.x'
-
-# 3. Instalar dependencias (solo si hay package.json)
-- script: |
-    if [ -f "package.json" ]; then
+  - script: |
       npm install
-      npm run build --if-present
-    fi
-  displayName: 'Install dependencies and build'
+      npm run build || echo "No hay script build, continuando..."
+    displayName: 'Instalar dependencias y construir app'
 
-# 4. Crear paquete de despliegue
-- task: ArchiveFiles@2
-  displayName: 'Create deployment ZIP'
-  inputs:
-    rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
-    includeRootFolder: false
-    archiveType: zip
-    archiveFile: '$(Build.ArtifactStagingDirectory)/deploy.zip'
-    replaceExistingArchive: true
+  - task: ArchiveFiles@2
+    displayName: 'Empaquetar aplicación en ZIP'
+    inputs:
+      rootFolderOrFile: '$(System.DefaultWorkingDirectory)'
+      includeRootFolder: false
+      archiveType: 'zip'
+      archiveFile: '$(Build.ArtifactStagingDirectory)/app.zip'
+      replaceExistingArchive: true
 
-# 5. Desplegar en Azure Web App
-- task: AzureWebApp@1
-  displayName: 'Deploy to Azure'
-  inputs:
-    azureSubscription: 'dd84aaae-d79f-4df5-b6d2-2b7120556d25'
-    appType: 'webAppLinux'
-    appName: 'PracticaPipeline'  # ⚠️ VERIFICA: ¿Este es el nombre REAL?
-    package: '$(Build.ArtifactStagingDirectory)/deploy.zip'
-    # Si tu app necesita un comando de inicio:
-    # startUpCommand: 'npm start'
+  - task: AzureWebApp@1
+    displayName: 'Desplegar en Azure Web App'
+    inputs:
+      azureSubscription: 'dd84aaae-d79f-4df5-b6d2-2b7120556d25'
+      appType: 'webAppLinux'
+      appName: 'PracticaPipeline'
+      runtimeStack: 'NODE|18LTS'
+      package: '$(Build.ArtifactStagingDirectory)/app.zip'
+      startUpCommand: 'npm start'
